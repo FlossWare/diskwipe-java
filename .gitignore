@@ -9,7 +9,6 @@
 target
 
 # Netbeans
-nb-configuration.xml
 nb_jr_remoting.cfg
 
 #JRebel
