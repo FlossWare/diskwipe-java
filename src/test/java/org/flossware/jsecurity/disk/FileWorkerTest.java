@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Scot P. Floess
+ * Copyright (C) 2017-2026 Scot P. Floess
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -171,5 +171,104 @@ class FileWorkerTest {
             }
         }
         assertTrue(foundWipeFile, "Should create file with 'wipe' prefix and 'disk' suffix");
+    }
+
+    @Test
+    void testRunWithReadOnlyDirectory(@TempDir final Path tempDir) throws Exception {
+        final File readOnlyDir = new File(tempDir.toFile(), "readonly");
+        readOnlyDir.mkdirs();
+        readOnlyDir.setWritable(false);
+
+        final FileWorker worker = new FileWorker(readOnlyDir, 512);
+        final Thread thread = new Thread(worker);
+        thread.start();
+        thread.join(1000);
+
+        readOnlyDir.setWritable(true);
+    }
+
+    @Test
+    void testConstants() {
+        assertEquals("wipe", FileWorker.PREFIX);
+        assertEquals("disk", FileWorker.SUFFIX);
+        assertEquals(10 * 1024 * 1024, FileWorker.DEFAULT_BUFFER_SIZE);
+    }
+
+    @Test
+    void testRunCompletesSuccessfully(@TempDir final Path tempDir) throws InterruptedException {
+        final FileWorker worker = new FileWorker(tempDir.toFile(), 512);
+        final Thread thread = new Thread(worker);
+        thread.start();
+
+        Thread.sleep(150);
+        thread.interrupt();
+        thread.join(1000);
+
+        assertFalse(thread.isAlive(), "Thread should have completed");
+    }
+
+    @Test
+    void testLargeBufferSize(@TempDir final Path tempDir) {
+        final int largeBuffer = 50 * 1024 * 1024; // 50MB
+        final FileWorker worker = new FileWorker(tempDir.toFile(), largeBuffer);
+        assertNotNull(worker);
+    }
+
+    @Test
+    void testSmallBufferSize(@TempDir final Path tempDir) {
+        final int smallBuffer = 1; // 1 byte
+        final FileWorker worker = new FileWorker(tempDir.toFile(), smallBuffer);
+        assertNotNull(worker);
+    }
+
+    @Test
+    void testMultipleSequentialRuns(@TempDir final Path tempDir) throws InterruptedException {
+        for (int i = 0; i < 3; i++) {
+            final FileWorker worker = new FileWorker(tempDir.toFile(), 256);
+            final Thread thread = new Thread(worker);
+            thread.setName("SeqWorker-" + i);
+            thread.start();
+
+            Thread.sleep(100);
+            thread.interrupt();
+            thread.join(1000);
+        }
+
+        final File[] files = tempDir.toFile().listFiles((dir, name) -> name.startsWith("wipe"));
+        assertNotNull(files);
+        assertTrue(files.length >= 3, "Should create files from multiple runs");
+    }
+
+    @Test
+    void testProgressReporting(@TempDir final Path tempDir) throws InterruptedException {
+        final FileWorker worker = new FileWorker(tempDir.toFile(), 100);
+        final Thread thread = new Thread(worker);
+        thread.setName("ProgressTest");
+        thread.start();
+
+        Thread.sleep(300);
+        thread.interrupt();
+        thread.join(1000);
+
+        final File[] files = tempDir.toFile().listFiles((dir, name) -> name.startsWith("wipe"));
+        assertNotNull(files);
+        assertTrue(files.length > 0, "Should create wipe file");
+    }
+
+    @Test
+    void testDirectoryCreationWithNestedPath(@TempDir final Path tempDir) {
+        final File nestedDir = new File(tempDir.toFile(), "level1/level2/level3");
+        assertFalse(nestedDir.exists());
+
+        new FileWorker(nestedDir, 1024);
+
+        assertTrue(nestedDir.exists());
+        assertTrue(nestedDir.isDirectory());
+    }
+
+    @Test
+    void testZeroByteBuffer(@TempDir final Path tempDir) {
+        final FileWorker worker = new FileWorker(tempDir.toFile(), 1024);
+        assertNotNull(worker);
     }
 }

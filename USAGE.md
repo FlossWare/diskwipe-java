@@ -1,4 +1,4 @@
-# jSecurity - Detailed Usage Guide
+# jsecurity - Detailed Usage Guide
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@
 mvn clean package
 
 # Wipe a directory (interactive mode with confirmation)
-java -jar target/jSecurity-1.0.0.jar /tmp/secure-wipe
+java -jar target/jsecurity-1.0.jar /tmp/secure-wipe
 ```
 
 The tool will prompt for confirmation before proceeding.
@@ -28,7 +28,7 @@ The tool will prompt for confirmation before proceeding.
 
 ```bash
 # Skip confirmation prompt (for scripts)
-java -jar target/jSecurity-1.0.0.jar -y /tmp/secure-wipe
+java -jar target/jsecurity-1.0.jar -y /tmp/secure-wipe
 ```
 
 ## Command-Line Reference
@@ -36,7 +36,7 @@ java -jar target/jSecurity-1.0.0.jar -y /tmp/secure-wipe
 ### Synopsis
 
 ```
-java -jar jSecurity-1.0.0.jar [OPTIONS] DIRECTORY [DIRECTORY2 ...]
+java -jar jsecurity-1.0.jar [OPTIONS] DIRECTORY [DIRECTORY2 ...]
 ```
 
 ### Options
@@ -73,14 +73,14 @@ Before selling or giving away a USB drive, wipe its free space:
 # Delete any files you want to remove
 # Then wipe free space
 
-java -jar jSecurity-1.0.0.jar /media/usb/wipe-temp
+java -jar jsecurity-1.0.jar /media/usb/wipe-temp
 ```
 
 **Steps:**
 1. Mount the drive
 2. Delete sensitive files normally
 3. Create a temporary directory on the drive
-4. Run jSecurity on that directory
+4. Run jsecurity on that directory
 5. After completion, delete the wipe directory
 6. Unmount and remove the drive
 
@@ -93,7 +93,7 @@ Securely wipe free space on a disk before decommissioning:
 mkdir -p /mnt/old-disk/secure-wipe
 
 # Run with more threads for faster completion
-java -jar jSecurity-1.0.0.jar -t 16 -b 52428800 /mnt/old-disk/secure-wipe
+java -jar jsecurity-1.0.jar -t 16 -b 52428800 /mnt/old-disk/secure-wipe
 
 # After completion, the disk can be safely removed
 ```
@@ -105,7 +105,7 @@ java -jar jSecurity-1.0.0.jar -t 16 -b 52428800 /mnt/old-disk/secure-wipe
 
 ### Scenario 3: Automated Cleanup Script
 
-Integrate jSecurity into a cleanup script:
+Integrate jsecurity into a cleanup script:
 
 ```bash
 #!/bin/bash
@@ -119,8 +119,8 @@ BUFFER_SIZE=20971520  # 20MB
 # Create temporary wipe directory
 mkdir -p "$WIPE_DIR"
 
-# Run jSecurity with auto-confirm
-java -jar /path/to/jSecurity-1.0.0.jar \
+# Run jsecurity with auto-confirm
+java -jar /path/to/jsecurity-1.0.jar \
     -y \
     -t "$THREADS" \
     -b "$BUFFER_SIZE" \
@@ -137,7 +137,7 @@ echo "Secure wipe completed successfully"
 Wipe free space on multiple partitions simultaneously:
 
 ```bash
-java -jar jSecurity-1.0.0.jar \
+java -jar jsecurity-1.0.jar \
     /mnt/partition1/wipe \
     /mnt/partition2/wipe \
     /mnt/partition3/wipe
@@ -154,7 +154,7 @@ For systems with limited memory or CPU:
 
 ```bash
 # Use fewer threads and smaller buffer
-java -jar jSecurity-1.0.0.jar -t 1 -b 1048576 /tmp/wipe
+java -jar jsecurity-1.0.jar -t 1 -b 1048576 /tmp/wipe
 ```
 
 **Configuration:**
@@ -164,7 +164,7 @@ java -jar jSecurity-1.0.0.jar -t 1 -b 1048576 /tmp/wipe
 
 ## Safety Checklist
 
-Before running jSecurity, verify:
+Before running jsecurity, verify:
 
 - [ ] **Backup critical data** - Ensure all important data is backed up elsewhere
 - [ ] **Verify target directory** - Double-check you're targeting the correct path
@@ -228,8 +228,8 @@ nproc
 **Testing:**
 ```bash
 # Try different thread counts and time the operation
-time java -jar jSecurity-1.0.0.jar -y -t 4 /tmp/test-wipe-4
-time java -jar jSecurity-1.0.0.jar -y -t 8 /tmp/test-wipe-8
+time java -jar jsecurity-1.0.jar -y -t 4 /tmp/test-wipe-4
+time java -jar jsecurity-1.0.jar -y -t 8 /tmp/test-wipe-8
 ```
 
 ### Determining Optimal Buffer Size
@@ -278,8 +278,8 @@ watch -n 5 'df -h /target/directory'
 - Create a subdirectory in a safe location instead
 
 ```bash
-# Wrong: java -jar jSecurity.jar /home
-# Right: java -jar jSecurity.jar /home/user/temp-wipe
+# Wrong: java -jar jsecurity.jar /home
+# Right: java -jar jsecurity.jar /home/user/temp-wipe
 ```
 
 ### Problem: "Parent directory is not writable"
@@ -313,10 +313,10 @@ chmod u+w /parent/directory
 smartctl -a /dev/sdX
 
 # Reduce threads for HDD
-java -jar jSecurity.jar -t 2 /target
+java -jar jsecurity.jar -t 2 /target
 
 # Increase buffer size
-java -jar jSecurity.jar -b 52428800 /target
+java -jar jsecurity.jar -b 52428800 /target
 ```
 
 ### Problem: Out of memory error
@@ -331,10 +331,10 @@ java -jar jSecurity.jar -b 52428800 /target
 # Example: 16 × 100MB = 1.6GB (may be too much)
 
 # Reduce threads
-java -jar jSecurity.jar -t 2 /target
+java -jar jsecurity.jar -t 2 /target
 
 # Or reduce buffer size
-java -jar jSecurity.jar -b 5242880 /target  # 5MB
+java -jar jsecurity.jar -b 5242880 /target  # 5MB
 ```
 
 ### Problem: Process interrupted/killed
@@ -355,7 +355,7 @@ java -jar jSecurity.jar -b 5242880 /target  # 5MB
 rm /target/directory/wipe*
 
 # Restart operation
-java -jar jSecurity.jar /target/directory
+java -jar jsecurity.jar /target/directory
 ```
 
 ### Problem: Disk not completely full after operation
@@ -371,18 +371,18 @@ java -jar jSecurity.jar /target/directory
 df -h /target
 
 # If significant space remains, run again
-java -jar jSecurity.jar -y /target/wipe2
+java -jar jsecurity.jar -y /target/wipe2
 ```
 
 ## Advanced Topics
 
 ### Integration with Secure Erase
 
-For maximum security, combine jSecurity with hardware-level secure erase:
+For maximum security, combine jsecurity with hardware-level secure erase:
 
 ```bash
-# 1. Wipe free space with jSecurity
-java -jar jSecurity.jar -y /mnt/disk/wipe
+# 1. Wipe free space with jsecurity
+java -jar jsecurity.jar -y /mnt/disk/wipe
 
 # 2. Then use ATA Secure Erase (if supported)
 hdparm --user-master u --security-set-pass password /dev/sdX
@@ -399,7 +399,7 @@ For paranoid security, run multiple passes:
 
 for pass in 1 2 3; do
     echo "Pass $pass of 3..."
-    java -jar jSecurity.jar -y /tmp/wipe-pass-$pass
+    java -jar jsecurity.jar -y /tmp/wipe-pass-$pass
     rm -rf /tmp/wipe-pass-$pass
 done
 
@@ -436,10 +436,10 @@ Capture operation log:
 
 ```bash
 # Log to file
-java -jar jSecurity.jar /target 2>&1 | tee wipe-operation.log
+java -jar jsecurity.jar /target 2>&1 | tee wipe-operation.log
 
 # Log with timestamps
-java -jar jSecurity.jar /target 2>&1 | while read line; do
+java -jar jsecurity.jar /target 2>&1 | while read line; do
     echo "$(date -Iseconds) $line"
 done | tee wipe-operation.log
 ```

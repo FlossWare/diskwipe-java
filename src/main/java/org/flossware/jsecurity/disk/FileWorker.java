@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Scot P. Floess
+ * Copyright (C) 2017-2026 Scot P. Floess
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -104,7 +104,7 @@ class FileWorker implements Runnable {
                 long totalBytesWritten = 0;
                 int writeCount = 0;
 
-                while (true) {
+                while (!Thread.currentThread().isInterrupted()) {
                     raf.write(buffer);
                     totalBytesWritten += bufferSize;
                     writeCount++;

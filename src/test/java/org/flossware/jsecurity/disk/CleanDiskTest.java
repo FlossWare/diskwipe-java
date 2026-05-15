@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Scot P. Floess
+ * Copyright (C) 2017-2026 Scot P. Floess
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -177,4 +177,164 @@ class CleanDiskTest {
         assertTrue(files.length > 0, "Should create wipe files");
     }
 
+    @Test
+    void testValidateSafeDirectoryWithVar() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/var"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithRootHome() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/root"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithSbin() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/sbin"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithBoot() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/boot"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithDev() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/dev"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithProc() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/proc"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithSys() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/sys"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithLib() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/lib"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithLib64() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/lib64"));
+    }
+
+    @Test
+    void testRunWithValidThreadCount(@TempDir final Path tempDir) {
+        final int exitCode = CleanDisk.run(new String[]{"-t", "2", "-y", tempDir.toString()});
+        assertEquals(0, exitCode, "Should succeed with valid thread count");
+    }
+
+    @Test
+    void testRunWithValidBufferSize(@TempDir final Path tempDir) {
+        final int exitCode = CleanDisk.run(new String[]{"-b", "1024", "-y", tempDir.toString()});
+        assertEquals(0, exitCode, "Should succeed with valid buffer size");
+    }
+
+    @Test
+    void testRunWithMultipleOptions(@TempDir final Path tempDir) {
+        final int exitCode = CleanDisk.run(new String[]{"-t", "2", "-b", "2048", "-y", tempDir.toString()});
+        assertEquals(0, exitCode, "Should succeed with multiple options");
+    }
+
+    @Test
+    void testRunWithLongFormOptions(@TempDir final Path tempDir) {
+        final int exitCode = CleanDisk.run(new String[]{"--threads", "2", "--buffer-size", "1024", "--yes", tempDir.toString()});
+        assertEquals(0, exitCode, "Should succeed with long form options");
+    }
+
+    @Test
+    void testFormatBytesWithLargeValues() {
+        assertEquals("1.0 TB", CleanDisk.formatBytes(1024L * 1024 * 1024 * 1024));
+        assertEquals("1.5 TB", CleanDisk.formatBytes((long)(1.5 * 1024 * 1024 * 1024 * 1024)));
+    }
+
+    @Test
+    void testFormatBytesWithEdgeCases() {
+        assertEquals("1023 B", CleanDisk.formatBytes(1023));
+        assertEquals("1.0 KB", CleanDisk.formatBytes(1024));
+        assertEquals("1023.0 KB", CleanDisk.formatBytes(1024 * 1023));
+    }
+
+    @Test
+    void testRunWithNoDirectories() {
+        final int exitCode = CleanDisk.run(new String[]{"-t", "2", "-b", "1024"});
+        assertEquals(1, exitCode, "Should fail when no directories specified");
+    }
+
+    @Test
+    void testRunWithMixedOptions(@TempDir final Path tempDir) {
+        final int exitCode = CleanDisk.run(new String[]{"-t", "4", "--buffer-size", "512", "-y", tempDir.toString()});
+        assertEquals(0, exitCode, "Should succeed with mixed short/long options");
+    }
+
+    @Test
+    void testWipeDirWithSingleThread(@TempDir final Path tempDir) throws Exception {
+        final WipeConfiguration config = new WipeConfiguration.Builder()
+                .threadCount(1)
+                .bufferSize(256)
+                .build();
+
+        final Thread wipeThread = new Thread(() -> {
+            try {
+                CleanDisk.wipeDir(tempDir.toString(), config);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+
+        wipeThread.start();
+        Thread.sleep(150);
+        wipeThread.interrupt();
+        wipeThread.join(2000);
+
+        final File[] files = tempDir.toFile().listFiles((dir, name) -> name.startsWith("wipe"));
+        assertNotNull(files);
+        assertTrue(files.length > 0, "Should create wipe files with single thread");
+    }
+
+    @Test
+    void testWipeDirWithManyThreads(@TempDir final Path tempDir) throws Exception {
+        final WipeConfiguration config = new WipeConfiguration.Builder()
+                .threadCount(8)
+                .bufferSize(128)
+                .build();
+
+        final Thread wipeThread = new Thread(() -> {
+            try {
+                CleanDisk.wipeDir(tempDir.toString(), config);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+
+        wipeThread.start();
+        Thread.sleep(300);
+        wipeThread.interrupt();
+        wipeThread.join(3000);
+
+        final File[] files = tempDir.toFile().listFiles((dir, name) -> name.startsWith("wipe"));
+        assertNotNull(files);
+        assertTrue(files.length > 0, "Should create wipe files with many threads");
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithExistingDirectory(@TempDir final Path tempDir) {
+        assertDoesNotThrow(() -> CleanDisk.validateSafeDirectory(tempDir.toString()));
+    }
+
+    @Test
+    void testPrintUsageDoesNotThrow() {
+        assertDoesNotThrow(() -> CleanDisk.printUsage());
+    }
+
+    @Test
+    void testFormatBytesConsistency() {
+        final long bytes = 1536;
+        final String formatted = CleanDisk.formatBytes(bytes);
+        assertTrue(formatted.contains("KB") || formatted.contains("B"));
+    }
 }
