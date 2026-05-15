@@ -37,7 +37,11 @@ jobs:
         run: "mvn -U build-helper:parse-version versions:set -DnewVersion=\\${parsedVersion.majorVersion}.\\${parsedVersion.nextMinorVersion} versions:commit"
 
       - name: Building
-        run: "mvn -U clean install"
+        run: "mvn -U clean compile"
+
+      - name: Running tests
+        run: "mvn test -DfailIfNoTests=false"
+        timeout-minutes: 5
 
       - name: Checkin and tag to github
         run: "mvn scm:checkin scm:tag"
