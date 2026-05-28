@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.flossware</groupId>
   <artifactId>diskwipe-java</artifactId>
-  <version>2.0</version>
+  <version>1.0</version>
   <name>FlossWare Diskwipe</name>
   <description>Multi-threaded disk wiping utility for secure free space overwriting</description>
   <url>https://github.com/FlossWare/diskwipe-java</url>
