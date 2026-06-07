@@ -46,6 +46,33 @@ import java.util.Set;
  * @author Scot P. Floess
  */
 public class CleanDisk {
+    /**
+     * Immutable set of filesystem paths that are considered unsafe targets for disk wiping operations.
+     * Any wipe request targeting one of these paths, or a subdirectory beneath one, is rejected
+     * by {@link #validateSafeDirectory(String)} with an {@link IllegalArgumentException}.
+     *
+     * <p>The set includes critical system directories for both Unix-like operating systems
+     * ({@code /}, {@code /bin}, {@code /boot}, {@code /dev}, {@code /etc}, {@code /lib},
+     * {@code /lib64}, {@code /proc}, {@code /root}, {@code /sbin}, {@code /sys}, {@code /usr},
+     * {@code /var}, {@code /home}) and macOS/Windows ({@code /Users}, {@code C:\},
+     * {@code C:\Windows}, {@code C:\Program Files}).</p>
+     *
+     * <p><strong>WARNING:</strong> Removing or modifying entries in this set weakens the safety
+     * guard and may allow the wipe utility to destroy an operating system installation.
+     * Additions to this set are encouraged when deploying to environments with additional
+     * protected mount points.</p>
+     *
+     * <p>Usage example (internal, via {@code validateSafeDirectory}):</p>
+     * <pre>{@code
+     * // This call succeeds because /tmp/wipe is not in DANGEROUS_PATHS:
+     * CleanDisk.validateSafeDirectory("/tmp/wipe");
+     *
+     * // This call throws IllegalArgumentException because "/" is dangerous:
+     * CleanDisk.validateSafeDirectory("/");
+     * }</pre>
+     *
+     * @see #validateSafeDirectory(String)
+     */
     private static final Set<String> DANGEROUS_PATHS = new HashSet<>(Arrays.asList(
             "/", "/bin", "/boot", "/dev", "/etc", "/lib", "/lib64",
             "/proc", "/root", "/sbin", "/sys", "/usr", "/var",

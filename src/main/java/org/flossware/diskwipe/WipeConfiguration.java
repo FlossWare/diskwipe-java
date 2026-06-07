@@ -32,6 +32,29 @@ package org.flossware.diskwipe;
  * @author Scot P. Floess
  */
 class WipeConfiguration {
+    /**
+     * The default number of worker threads used for disk wipe operations when no explicit
+     * thread count is provided via {@link Builder#threadCount(int)}.
+     *
+     * <p>This value (4) provides a reasonable balance between parallelism and resource
+     * consumption on most modern multi-core systems. It is used as the initial value
+     * in {@link Builder} and applied whenever the caller does not override it.</p>
+     *
+     * <p><strong>Usage example:</strong></p>
+     * <pre>
+     * // Uses DEFAULT_THREAD_COUNT (4) since threadCount is not set:
+     * WipeConfiguration config = new WipeConfiguration.Builder().build();
+     * assert config.getThreadCount() == 4;
+     *
+     * // Override the default:
+     * WipeConfiguration custom = new WipeConfiguration.Builder()
+     *     .threadCount(8)
+     *     .build();
+     * </pre>
+     *
+     * @see Builder#threadCount(int)
+     * @see #getThreadCount()
+     */
     private static final int DEFAULT_THREAD_COUNT = 4;
     private static final int DEFAULT_BUFFER_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -81,6 +104,26 @@ class WipeConfiguration {
         return skipConfirmation;
     }
 
+    /**
+     * Returns a human-readable string representation of this wipe configuration,
+     * summarizing the thread count, buffer size in bytes, and skip confirmation flag.
+     *
+     * <p>The returned format is:
+     * {@code WipeConfiguration{threads=N, bufferSize=N bytes, skipConfirmation=true|false}}</p>
+     *
+     * <p><strong>Usage example:</strong></p>
+     * <pre>
+     * WipeConfiguration config = new WipeConfiguration.Builder()
+     *     .threadCount(8)
+     *     .bufferSize(20 * 1024 * 1024)
+     *     .build();
+     * System.out.println(config);
+     * // Output: WipeConfiguration{threads=8, bufferSize=20971520 bytes, skipConfirmation=false}
+     * </pre>
+     *
+     * @return a formatted string containing the thread count, buffer size (in bytes),
+     *         and confirmation skip flag
+     */
     @Override
     public String toString() {
         return String.format("WipeConfiguration{threads=%d, bufferSize=%d bytes, skipConfirmation=%s}",
