@@ -29,3 +29,6 @@ nb-configuration.xml
 # JRebel
 rebel-remote.xml
 rebel.xml
+*.log
+logs/
+.claude
