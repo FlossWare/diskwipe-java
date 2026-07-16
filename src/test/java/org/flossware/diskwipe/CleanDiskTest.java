@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,6 +55,34 @@ class CleanDiskTest {
     @Test
     void testValidateSafeDirectoryWithSubdirOfDangerous() {
         assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/etc/subdir"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithSymlinkToRoot(@TempDir final Path tempDir) throws Exception {
+        final Path symlink = tempDir.resolve("safe-looking-dir");
+        Files.createSymbolicLink(symlink, Path.of("/"));
+        assertThrows(IllegalArgumentException.class,
+                () -> CleanDisk.validateSafeDirectory(symlink.toString()),
+                "Symlink to / must be detected and rejected");
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithSymlinkToEtc(@TempDir final Path tempDir) throws Exception {
+        final Path symlink = tempDir.resolve("my-config");
+        Files.createSymbolicLink(symlink, Path.of("/etc"));
+        assertThrows(IllegalArgumentException.class,
+                () -> CleanDisk.validateSafeDirectory(symlink.toString()),
+                "Symlink to /etc must be detected and rejected");
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithSymlinkToSafeDir(@TempDir final Path tempDir) throws Exception {
+        final Path safeTarget = tempDir.resolve("real-target");
+        Files.createDirectories(safeTarget);
+        final Path symlink = tempDir.resolve("link-to-safe");
+        Files.createSymbolicLink(symlink, safeTarget);
+        assertDoesNotThrow(() -> CleanDisk.validateSafeDirectory(symlink.toString()),
+                "Symlink to a safe directory should be allowed");
     }
 
     @Test
@@ -319,6 +348,36 @@ class CleanDiskTest {
         final File[] files = tempDir.toFile().listFiles((dir, name) -> name.startsWith("wipe"));
         assertNotNull(files);
         assertTrue(files.length > 0, "Should create wipe files with many threads");
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithOpt() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/opt"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithSnap() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/snap"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithRun() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/run"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithMnt() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/mnt"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithMedia() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/media"));
+    }
+
+    @Test
+    void testValidateSafeDirectoryWithSrv() {
+        assertThrows(IllegalArgumentException.class, () -> CleanDisk.validateSafeDirectory("/srv"));
     }
 
     @Test

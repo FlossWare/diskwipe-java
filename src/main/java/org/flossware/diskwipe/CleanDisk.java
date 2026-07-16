@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -46,25 +47,51 @@ import java.util.Set;
  * @author Scot P. Floess
  */
 public class CleanDisk {
-    private static final Set<String> DANGEROUS_PATHS = new HashSet<>(Arrays.asList(
-            "/", "/bin", "/boot", "/dev", "/etc", "/lib", "/lib64",
-            "/proc", "/root", "/sbin", "/sys", "/usr", "/var",
-            "/home", "/Users", "C:\\", "C:\\Windows", "C:\\Program Files"
-    ));
+    private static final Set<String> DANGEROUS_PATHS = new HashSet<>();
+
+    static {
+        for (final String path : Arrays.asList(
+                "/", "/bin", "/boot", "/dev", "/etc", "/lib", "/lib64",
+                "/proc", "/root", "/sbin", "/sys", "/usr", "/var",
+                "/home", "/opt", "/snap", "/run", "/mnt", "/media", "/srv",
+                "/Users", "C:\\", "C:\\Windows", "C:\\Program Files"
+        )) {
+            DANGEROUS_PATHS.add(path.toLowerCase());
+        }
+    }
 
     /**
      * Validates that a directory is safe to wipe.
+     *
+     * <p>This method resolves symbolic links before checking against the
+     * dangerous paths blocklist to prevent symlink-based bypasses
+     * (CWE-59: Improper Link Resolution Before File Access).</p>
      *
      * @param dirPath the directory path to validate
      * @throws IllegalArgumentException if the directory is not safe to wipe
      */
     static void validateSafeDirectory(final String dirPath) {
         final File dir = new File(dirPath);
-        final File absDir = dir.getAbsoluteFile();
+
+        // Warn if the path is a symbolic link
+        if (Files.isSymbolicLink(dir.toPath())) {
+            System.err.println("WARNING: Path is a symbolic link: " + dirPath);
+        }
+
+        // Use getCanonicalFile() to resolve symlinks, not just getAbsoluteFile()
+        final File absDir;
+        try {
+            absDir = dir.getCanonicalFile();
+        } catch (final IOException e) {
+            throw new IllegalArgumentException(
+                    "Cannot resolve canonical path for: " + dirPath + " (" + e.getMessage() + ")");
+        }
         final String absPath = absDir.getPath();
+        final String normalizedPath = absPath.toLowerCase();
 
         for (final String dangerousPath : DANGEROUS_PATHS) {
-            if (absPath.equals(dangerousPath) || absPath.startsWith(dangerousPath + File.separator)) {
+            if (normalizedPath.equals(dangerousPath)
+                    || normalizedPath.startsWith(dangerousPath + File.separator.toLowerCase())) {
                 throw new IllegalArgumentException(
                         "SAFETY VIOLATION: Cannot wipe system directory: " + absPath);
             }
